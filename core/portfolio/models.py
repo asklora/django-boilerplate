@@ -4,10 +4,9 @@ from django.db import models
 from core.djangomodule.models import BaseTimeStampModel
 from core.universe.models import Universe
 from core.user.models import User
-from core.bot.models import BotOptionType
 from django.db import IntegrityError
 import uuid
-from core.djangomodule.general import generate_id, formatdigit
+from core.djangomodule.general import generate_id
 from simple_history.models import HistoricalRecords
 
 class Order(BaseTimeStampModel):
@@ -35,10 +34,6 @@ class Order(BaseTimeStampModel):
 
     class Meta:
         abstract = True
-        db_table = "orders"
-
-    def insufficient_balance(self):
-        return (self.user_amount / self.margin) > self.user_id.user_balance.amount and self.side == 'buy'
 
     def save(self, *args, **kwargs):
 
@@ -63,9 +58,6 @@ class Order(BaseTimeStampModel):
 
 
 class OrderPosition(BaseTimeStampModel):
-    """
-    Confirmed orders with status field equals to "filled"
-    """
     position_uid = models.CharField(primary_key=True, editable=False, max_length=500)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_position", db_column="user_id")
     ticker = models.ForeignKey(Universe, on_delete=models.CASCADE, related_name="ticker_ordered", db_column="ticker")
@@ -99,11 +91,6 @@ class OrderPosition(BaseTimeStampModel):
     class Meta:
         abstract = True
 
-    @property
-    def bot(self):
-        _bot = BotOptionType.objects.get(bot_id=self.bot_id)
-        return _bot
-
     def save(self, *args, **kwargs):
         if not self.position_uid:
             self.position_uid = uuid.uuid4().hex
@@ -124,9 +111,6 @@ class OrderPosition(BaseTimeStampModel):
             super().save(*args, **kwargs)
 
 class PositionPerformance(BaseTimeStampModel):
-    """
-    Tracking the changes in the position of the orders and also AI's performance
-    """
     performance_uid = models.CharField(max_length=255, primary_key=True, editable=False)
     position_uid = models.ForeignKey(OrderPosition, on_delete=models.CASCADE, related_name="order_position", db_column="position_uid")
     last_spot_price = models.FloatField(null=True, blank=True)
@@ -171,8 +155,3 @@ class PositionPerformance(BaseTimeStampModel):
 
     class Meta:
         abstract = True
-        db_table = "orders_position_performance"
-        indexes = [models.Index(fields=['created','position_uid','order_uid'])]
-
-    def __str__(self):
-        return str(self.created)
