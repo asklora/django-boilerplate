@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'core.services',
     'core.utils',
     'core.user',
+    'core.bot',
     'core.portfolio'
 ]
 
