@@ -76,6 +76,7 @@ class PositionPerformance(BaseTimeStampModel):
     order_summary = models.JSONField(null=True, blank=True)
     status = models.CharField(null=True, blank=True, max_length=200)
     exchange_rate = models.FloatField(null=True, blank=True,default=1)
+    setup = models.JSONField(blank=True, null=True, default=dict)
 
     class Meta:
         abstract = True
