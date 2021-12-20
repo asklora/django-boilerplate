@@ -41,3 +41,7 @@
 - edit `locale/en_US/LC_MESSAGES/django.po` (or `locale/zh_Hant/LC_MESSAGES/django.po`) and add your translations in `msgstr` fields
 - when finished, run `./manage.py compilemessages` to compile your changes, this will create `*.mo` files alongside the `.po` files
 - consult [Django documentation](https://docs.djangoproject.com/en/3.2/topics/i18n/translation) for more information
+
+## Notes on deployment
+- There is a descriptive [README](deployment/README.md) file in the deployment/ directory.
+- skaffold.yaml is used by the skaffold dev/deployment tool. It needs to be in the root directory so that it can access all the code for building images.
