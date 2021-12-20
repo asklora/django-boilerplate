@@ -1,186 +1,137 @@
-import asyncio
+from dataclasses import dataclass
+from core.universe.models import CurrencyCalendars, Universe
+from datetime import datetime, timedelta
 from core.bot.models import BotOptionType
-from rest_framework import exceptions
-from core.orders.models import OrderPosition
-from .payload import ActionPayload,SellPayload,BuyPayload
-from core.orders.models import Order, OrderPosition
+from core.orders.models import OrderPosition, PositionPerformance
+from .BotException import UnactiveTicker
 
 
-class SellValidator:
-    
-    position: OrderPosition
+@dataclass
+class BaseDatavalidation:
+    bot: BotOptionType
 
-    def __init__(self, payload: SellPayload):
-        self.payload = payload
-    
-    async def is_user_position(self):
-        if self.payload.user_id != self.position.user_id:
-            raise exceptions.NotAcceptable(
-                f"{self.position.position_uid} credentials error")
-    
-    
-    def is_position_uid_valid(self):
-        if self.payload.setup.get('position', None):
-            return
-        raise exceptions.NotAcceptable(
-            {"detail": "must provided the position uid for sell side"})
-
-    def is_position_exists(self) -> OrderPosition:
+    def validate_ticker_is_active(self, ticker_code: str):
         try:
-            position = OrderPosition.objects.select_related(
-                'user_id','ticker').get(position_uid=self.payload.setup['position'])
-        except OrderPosition.DoesNotExist:
-            raise exceptions.NotFound({'detail': 'position not found error'})
+            ticker = Universe.objects.get(ticker=ticker_code)
+        except Universe.DoesNotExist:
+            raise ValueError(f"Ticker {self.ticker} not found in Universe")
 
-        return position
+        if not ticker.is_active:
+            raise UnactiveTicker("Ticker is not active")
 
-    async def is_closed(self):
-        if not self.position.is_live:
-            raise exceptions.NotAcceptable(f"position, has been closed")
-        return
-
-    async def has_order(self):
-        
-        pending_order =await Order.objects.async_filter(
-            user_id=self.position.user_id,
-            status='pending',
-            bot_id=self.position.bot_id,
-            ticker=self.position.ticker
-        )
-        if await pending_order.async_exists():
-            last_order = await pending_order.async_first()
-            orderId = last_order.order_uid.hex
-            raise exceptions.NotAcceptable(
-                f"sell order already exists for this position, order id : {orderId}, current status pending")
-    
-    
-    async def validation_tasks(self):
-        task =[
-            asyncio.ensure_future(self.is_user_position()),
-            asyncio.ensure_future(self.has_order()),
-            asyncio.ensure_future(self.is_closed()),
-        ]
-        await asyncio.gather(*task)
-    
-    def validate(self):
-        self.is_position_uid_valid
-        self.position = self.is_position_exists()
-        asyncio.run(self.validation_tasks())
-        self.payload.margin = self.position.margin
-
-
-
-class BuyValidator:
-
-    def __init__(self, payload: BuyPayload):
-        self.payload = payload
-        self.user_amount = self.payload.user_id.user_balance.amount
-        self.user_camount =self.payload.c_amount
-        
-    
-    async def is_bot_exist(self):
+    def get_bot(self, bot_id):
         try:
-            await BotOptionType.objects.async_get(bot_id=self.payload.bot_id)
+            self.bot = BotOptionType.objects.get(pk=bot_id)
         except BotOptionType.DoesNotExist:
-            raise exceptions.NotFound({"detail": "bot not found"})
+            raise Exception("Bot does not exist")
 
 
-    async def is_ticker_active(self):
-        if not self.payload.ticker.is_active:
-            raise exceptions.NotAcceptable(
-                {"detail": f"{self.payload.ticker.ticker} is not active"})
-    
-    async def is_order_exist(self):
-        orders = await Order.objects.async_filter(user_id=self.payload.user_id, ticker=self.payload.ticker,
-                                      bot_id=self.payload.bot_id, status='pending', side='buy')
-        if await orders.async_exists():
-            raise exceptions.NotAcceptable(
-                {"detail": f"you already has order for {self.payload.ticker.ticker} in current options"})
+@dataclass
+class BotCreateProps(BaseDatavalidation):
+    ticker: str
+    spot_date: datetime.date
+    created: datetime
+    expiry: datetime.date
+    investment_amount: float
+    price: float
+    margin: int
+    currency: str
+    bot: BotOptionType
+    bot_id: str
 
-    async def is_portfolio_exist(self):
-        portfolios = await OrderPosition.objects.async_filter(
-            user_id=self.payload.user_id, ticker=self.payload.ticker, bot_id=self.payload.bot_id, is_live=True)
-        if await portfolios.async_exists():
-            raise exceptions.NotAcceptable(
-                {"detail": f"cannot have multiple position for {self.payload.ticker.ticker} in current options"})
+    def __init__(
+        self,
+        ticker: str,
+        spot_date: datetime,
+        investment_amount: float,
+        price: float,
+        bot_id: str,
+        margin: int = 1,
+    ):
+        self.ticker = ticker
+        self.spot_date = spot_date.date()
+        self.created = spot_date
+        self.investment_amount = investment_amount * margin
+        self.price = price
+        self.bot_id = bot_id
+        self.currency = self.get_ticker_currency()
+        self.margin = margin
 
-    async def is_below_one(self):
-        return ((self.user_camount) / self.payload.price) < 1
-
-    async def is_insufficient_funds(self):
-        if self.payload.amount > self.user_amount or await self.is_below_one():
-            raise exceptions.NotAcceptable({"detail": "insufficient funds"})
-
-    async def is_zero_amount(self):
-        if self.payload.amount <= 0:
-            raise exceptions.NotAcceptable({"detail": "amount should not 0"})
-    
-    async def validation_tasks(self):
-        tasks = [
-            asyncio.ensure_future(self.is_bot_exist()),
-            asyncio.ensure_future(self.is_ticker_active()),
-            asyncio.ensure_future(self.is_order_exist()),
-            asyncio.ensure_future(self.is_portfolio_exist()),
-            asyncio.ensure_future(self.is_zero_amount()),
-            asyncio.ensure_future(self.is_insufficient_funds()),
-            ]
-        await asyncio.gather(*tasks)
-
-    def validate(self):
-        asyncio.run(self.validation_tasks())
-
-
-        
-class ActionValidator:
-    
-    order:Order
-    
-    
-    def __init__(self, payload: ActionPayload):
-        self.payload = payload
+    def get_ticker_currency(self) -> str:
         try:
-            self.order = Order.objects.get(pk=self.payload.order_uid)
-        except Order.DoesNotExist:
-            raise exceptions.NotFound({"detail": "order not found"})
-    
-    def is_actioned(self):
-        if self.order.status == self.payload.status:
-            raise exceptions.NotAcceptable({"detail": f"order is already {self.order.status}"})
+            ticker = Universe.objects.get(ticker=self.ticker)
+        except Universe.DoesNotExist:
+            raise ValueError(f"Ticker {self.ticker} not found in Universe")
+        return ticker.currency_code.currency_code
 
-    def is_insufficient_funds(self):
-        if not self.payload.status == "cancel":
-            if self.order.insufficient_balance():
-                raise exceptions.MethodNotAllowed(
-                    {'detail': 'insufficient funds'})
-    
-    def is_incorrect_status(self):
-        if not self.payload.status in ['placed', 'cancel']:
-            raise exceptions.MethodNotAllowed({"detail": "status should placed or cancel"})
-    
+    def set_time_to_exp(self, time_to_exp: float):
+        self.time_to_exp = time_to_exp
+
+    def set_expiry_date(self):
+        days = int(round((self.time_to_exp * 365), 0))
+        expiry = self.spot_date + timedelta(days=days)
+        currency: str = self.currency
+        while expiry.weekday() != 5:
+            expiry = expiry - timedelta(days=1)
+
+        while True:
+            holiday = False
+            data = CurrencyCalendars.objects.filter(
+                non_working_day=expiry, currency_code=currency
+            ).distinct("non_working_day")
+            if data:
+                holiday = True
+            if not holiday and expiry.weekday() < 5:
+                break
+            else:
+                expiry = expiry - timedelta(days=1)
+        self.expiry = expiry
+
     def validate(self):
-        self.is_incorrect_status()
-        self.is_actioned()
-        self.is_insufficient_funds()
+        self.validate_ticker_is_active(self.ticker)
+        self.get_bot(self.bot_id)
+        self.set_time_to_exp(self.bot.time_to_exp)
+        self.set_expiry_date()
 
-class ExecutorValidator(ActionValidator):
 
-    def is_actioned(self):
-        if self.order.status == self.payload.status:
-            raise Exception(f"order is already {self.order.status}")
+@dataclass
+class BotHedgerProps(BaseDatavalidation):
+    sec_id: str
+    bot: BotOptionType
+    position: OrderPosition
+    last_performance: PositionPerformance
 
-    def is_insufficient_funds(self):
-        if not self.payload.status == "cancel":
-            if self.order.insufficient_balance():
-                Exception(
-                    'insufficient funds')
+    def __init__(self, sec_id: str):
+        self.sec_id = sec_id
+        self.get_active_position()
+        self.get_last_performance()
+        self.get_bot(self.position.bot_id)
 
-class CancelExecutorValidator(ExecutorValidator):
-    def is_on_pending(self):
-        if self.order.status != 'pending':
-            raise Exception(f"cannot cancel, for order with status {self.order.status}")
-        
+    def get_active_position(self):
+        try:
+            self.position = OrderPosition.objects.get(
+                sec_id=self.sec_id, is_active=True
+            )
+        except OrderPosition.DoesNotExist:
+            raise Exception("Position does not exist")
+
+    def get_last_performance(self):
+        try:
+            self.last_performance = PositionPerformance.objects.filter(
+                position_uid=self.position
+            ).latest("created")
+        except PositionPerformance.DoesNotExist:
+            raise Exception("performance does not exist")
+
+    def validate_position_is_active(self):
+        if not self.position.is_active:
+            raise Exception("Position is not active")
+
     def validate(self):
-        super().validate()
-        self.is_on_pending()
-            
-        
+        self.validate_position_is_active()
+        self.validate_ticker_is_active(self.position.ticker.ticker)
+
+
+@dataclass
+class BotStopperProps(BotHedgerProps):
+    pass
