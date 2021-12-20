@@ -27,12 +27,17 @@
   from django.utils.translation import gettext as _
   ```
 - mark the texts you want to be translated like this:
-
   ```
   print(_("key"))
   message: str = _("another key")
   ```
-- run `./manage makemessages -a` **every time** you add new keys or edit existing ones to save the changes and register your keys.
+
+  Note: django localisation does not support f-string, if you need string interpolation, do it this way:
+  ```
+  message: str = _(f"user {user} is not found")  # WILL NOT WORK
+  message: str = _("user %(user)s is not found") % {"user": user}  # Do this instead
+  ```
+- run `./manage.py makemessages -a` **every time** you add new keys or edit existing ones to save the changes and register your keys.
 - edit `locale/en_US/LC_MESSAGES/django.po` (or `locale/zh_Hant/LC_MESSAGES/django.po`) and add your translations in `msgstr` fields
 - when finished, run `./manage.py compilemessages` to compile your changes, this will create `*.mo` files alongside the `.po` files
 - consult [Django documentation](https://docs.djangoproject.com/en/3.2/topics/i18n/translation) for more information
