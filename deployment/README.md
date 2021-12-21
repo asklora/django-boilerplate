@@ -7,6 +7,7 @@ NOTE: Once setup, only steps 1 & 3 needs to be done
 # SET UP
 # ======
 # 1) Login to Docker. This bust be done once per shell session.
+# Note: This step is not necessary for local development.
 docker login <registry-name>
 
 # 2) Setup kubeconfig; cluster cert, user auth, and context. This only has to be done once.
