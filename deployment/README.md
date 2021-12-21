@@ -2,12 +2,12 @@
 This directory contains all the .Dockerfiles and K8s .yaml files for deploying this app.
 
 **Usage:**  
-NOTE: Once setup, only steps 1 & 3 needs to be done
+NOTE: Once setup, only steps 1 & 3 needs to be done.
+NOTE: If only developing locally, steps 1, 4, & 5 can be skipped.
 ```
 # SET UP
 # ======
 # 1) Login to Docker. This bust be done once per shell session.
-# Note: This step is not necessary for local development.
 docker login <registry-name>
 
 # 2) Setup kubeconfig; cluster cert, user auth, and context. This only has to be done once.
@@ -19,7 +19,7 @@ kubectl config get-contexts
 kubectl config set current-context <context name>
 
 # 4) By default, skaffold will not push to cloud registries. For cloud contexts, do the following. This only has to be done once.
-skaffold config set --kube-context='<context name>' local-cluster false
+skaffold config set --kube-context='<cloud context name>' local-cluster false
 
 # 5) Tell skaffold which registry to push images to for your kube context. This only has to be done once.
 skaffold config set --kube-context='<cloud context name>' default-repo <registry url>
