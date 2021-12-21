@@ -38,5 +38,5 @@
 - consult [Django documentation](https://docs.djangoproject.com/en/3.2/topics/i18n/translation) for more information
 
 ## Notes on deployment
-- There is a descriptive [README](deployment/README.md) file in the deployment/ directory.
+- There is a descriptive [README](deployment/README.md) file in the `deployment/` directory.
 - skaffold.yaml is used by the skaffold dev/deployment tool. It needs to be in the root directory so that it can access all the code for building images.
