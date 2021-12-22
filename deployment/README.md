@@ -19,6 +19,8 @@ kubectl config set current-context <context name>
 
 # 4) By default, skaffold will not push to cloud registries. For cloud contexts, do the following. This only has to be done once.
 skaffold config set --kube-context='<context name>' local-cluster false
+# 4.1) If deving locally, make minikube use your local docker daemon:
+eval `minikube docker-env`
 
 # 5) Tell skaffold which registry to push images to for your kube context. This only has to be done once.
 skaffold config set --kube-context='<cloud context name>' default-repo <registry url>
