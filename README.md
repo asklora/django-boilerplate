@@ -45,3 +45,13 @@
 ## Notes on deployment
 - There is a descriptive [README](deployment/README.md) file in the deployment/ directory.
 - skaffold.yaml is used by the skaffold dev/deployment tool. It needs to be in the root directory so that it can access all the code for building images.
+
+## Notes on JWT authentication
+
+### Extra requirements
+```
+djangorestframework-simplejwt==5.0.0
+```
+
+### Guide
+Follow [this README](core/services/README.md)
