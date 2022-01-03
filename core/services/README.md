@@ -26,7 +26,7 @@ Run the following commands in the project root to initialize Django first. Follo
 ```
 python manage.py migrate
 python manage.py createsuperuser
-python -c "from django.contrib.auth.models import User; user = User.objects.create_user('user1', password='C@3vsRdNts8R5#N')"
+python manage.py shell -c "from django.contrib.auth.models import User; user = User.objects.create_user('user1', password='C@3vsRdNts8R5#N')"
 ```
 
 ### Connectivity and authentication test
