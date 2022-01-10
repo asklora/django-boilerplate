@@ -6,9 +6,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework_simplejwt import authentication
 from .serializers import UserSerializer, GroupSerializer
+from .types import LoggedAPIView
 
-
-class SampleAPI1(views.APIView):
+class SampleAPI1(LoggedAPIView, views.APIView):
     # Specify JWT authentication is the only authentication method allowed
     # and the APIView is only accessible if a user sends a request with an
     # access token.
@@ -18,7 +18,7 @@ class SampleAPI1(views.APIView):
     def get(self, request, format=None):
         return Response([{'a': 'SampleAPI1'}])
 
-class UserViewSet(viewsets.ReadOnlyModelViewSet):
+class UserViewSet(LoggedAPIView, viewsets.ReadOnlyModelViewSet):
     """
     API endpoint that allows users to be viewed or edited.
     """
@@ -31,8 +31,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     authentication_classes = [authentication.JWTAuthentication]
     permission_classes = [permissions.IsAdminUser, permissions.IsAuthenticated]
 
-
-class GroupViewSet(viewsets.ReadOnlyModelViewSet):
+class GroupViewSet(LoggedAPIView, viewsets.ReadOnlyModelViewSet):
     """
     API endpoint that allows groups to be viewed or edited.
     """
