@@ -9,7 +9,6 @@ def login_view(request):
     return render(request, 'login.html')
 
 def login_authenticate_view(request):
-    print(request.POST)
     username = request.POST['username']
     password = request.POST['password']
     user = authenticate(request, username=username, password=password)
