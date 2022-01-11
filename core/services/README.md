@@ -30,7 +30,7 @@ python manage.py shell -c "from django.contrib.auth.models import User; user = U
 ```
 
 ### Connectivity and authentication test
-Execute the following command in the project root to run all unit tests.
+Start the webserver locally with `python manage.py runserver`. Then, execute the following command in the project root to run all unit tests.
 ```
 pytest -s
 ```

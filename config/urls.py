@@ -20,6 +20,11 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView
 )
+from core.user.views import (
+    login_view,
+    login_authenticate_view,
+    logout_view
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,4 +34,8 @@ urlpatterns = [
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     # Sample API endpoints
     path('api/', include('core.services.urls')),
+    # API documentation auth
+    path('login/', login_view),
+    path('login/auth/', login_authenticate_view),
+    path('logout/', logout_view),
 ]
