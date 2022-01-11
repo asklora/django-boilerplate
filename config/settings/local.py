@@ -12,6 +12,15 @@ ALLOWED_HOSTS = []
 
 STATIC_URL = '/static/'
 
+# Follow https://docs.djangoproject.com/en/4.0/howto/static-files/
+# to serve static files in production environment
+#
+# !! DO NOT USE THE FOLLOWING SETTINGS FOR STATIC FILES DIRECTORY
+# IN PRODUCTION ENVIRONMENT !!
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 
 DATABASES = {
