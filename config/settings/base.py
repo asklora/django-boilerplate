@@ -193,18 +193,25 @@ LOGGING = {
     },
     'loggers': {
         'core.services': {
-            'handlers': ['console'],
+            'handlers': [
+                'console',
+                # Uncomment the following line if logs should also be written a file
+                # 'file',
+            ],
             'level': 'DEBUG',
             'propagate': True,
         },
     }
 }
 
+# Force all loggers to write logs to console only in debug mode
+#
 # if DEBUG:
 #     # make all loggers use the console.
 #     for logger in LOGGING['loggers']:
 #         LOGGING['loggers'][logger]['handlers'] = ['console']
 
+# Specify custom Django login/logout endpoints in Swagger documenation
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': True,
     'LOGIN_URL': '/login/',

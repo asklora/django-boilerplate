@@ -5,6 +5,18 @@ logger = logging.getLogger(__name__)
 
 
 def info(**deco_kwargs):
+    """
+Basic definition of request method decorator for INFO-type logging
+
+Usage:
+---
+from core.services import log
+
+@log.info(custom_message='abc')
+def get(self, request, *args, **kwargs):
+    ...
+
+    """
     def _decorator(func):
         def object_method_wrapper(self, *args, **kwargs):
             result = func(self, *args, **kwargs)
@@ -22,6 +34,18 @@ def info(**deco_kwargs):
     return _decorator
 
 def debug(**deco_kwargs):
+    """
+Basic definition of request method decorator for DEBUG-type logging
+
+Usage:
+---
+from core.services import log
+
+@log.debug(custom_message='abc')
+def get(self, request, *args, **kwargs):
+    ...
+
+    """
     def _decorator(func):
         def object_method_wrapper(self, *args, **kwargs):
             result = func(self, *args, **kwargs)

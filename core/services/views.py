@@ -15,7 +15,9 @@ _SchemaView = get_schema_view(
       description="App API",
       contact=openapi.Contact(email="cs@asklora.ai"),
    ),
+   # Comment the following line if the API documentation is open to public
    authentication_classes=(authentication.SessionAuthentication,),
+   # Comment the following line if the API documentation is open to public
    permission_classes=(permissions.IsAuthenticated,),
 )
 

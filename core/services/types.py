@@ -3,6 +3,11 @@ from . import log
 
 
 class LoggedAPIView(views.APIView):
+    """
+    Since responses must go through dispatch method defined in views.APIView,
+    the simplest way to do API logging is to hook the dispatch method with
+    a logging decorator.
+    """
     @log.debug()
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)

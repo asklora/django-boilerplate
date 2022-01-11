@@ -7,6 +7,7 @@ router = routers.DefaultRouter()
 # URL patterns for ViewSets are added via rest_framework.routers.SimpleRouter
 router.register(r'users', views.UserViewSet)
 router.register(r'groups', views.GroupViewSet)
+# Hide root view for /api
 router.include_root_view = False
 
 # Wire up our API using automatic URL routing.
